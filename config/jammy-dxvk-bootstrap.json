@@ -1,0 +1,9 @@
+{
+  "url": "https://github.com/GaryOAO/UUWay/releases/download/v1.5.7/uuway_1.5.7_amd64.deb",
+  "sha256": "3251b4d67922d83fac258cbd1b74beb5387fa897da9743ee5315e2567538ab26",
+  "inputs": {
+    "config/dxvk-capture-dependencies.json": "1ca5efd79db45565d09a73f6c19030d950f4328ffeed5a8f9ebf7a538f9b34d1",
+    "patches/dxvk-3.1-private-capture.patch": "6f92aeac387b1fc901e54e1d4dcddf373bf9a61c3b2c34751aae01c5013ce455",
+    "src/dxvk_capture_hook.h": "55590ea497c35a3762a883d33be0f26a4a3b61a5d4250d480cfa245ff31255ad"
+  }
+}

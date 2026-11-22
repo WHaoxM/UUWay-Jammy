@@ -123,23 +123,26 @@ uid = pwd.getpwnam('tester').pw_uid
 (runtime / str(uid) / 'bus').touch()
 runner = Runner()
 clock = Clock()
+target = apply.installed_target()
 baseline = dict(units={name: dict(active=True, restarts=0, entered=500) for name in apply.SERVICES},
                 processes={}, connected=None)
 
 
-def make_release(version, *, source_deb, deb_version=None, tamper=False, sums=True, sums_for=None):
+def make_release(version, *, source_deb, deb_version=None, tamper=False, sums=True, sums_for=None, other_target=False):
     """A staged release as the updater downloads it, built by repacking `source_deb`."""
     tree = work / f'tree-{version}-{len(list(work.iterdir()))}'
     run('dpkg-deb', '-R', source_deb, tree)
     control = (tree / 'DEBIAN/control').read_text().splitlines()
     (tree / 'DEBIAN/control').write_text(''.join(
-        (f'Version: {deb_version or version}\n' if line.startswith('Version:') else line + '\n') for line in control))
+        f'Version: {deb_version or version}\n' if line.startswith('Version:') else
+        f'X-UUWay-Target: {apply.DEFAULT_TARGET}\n' if other_target and line.startswith('X-UUWay-Target:')
+        else line + '\n' for line in control))
     stage = work / f'stage-{version}-{len(list(work.iterdir()))}'
     stage.mkdir()
-    deb = stage / apply.deb_name(version)
+    deb = stage / apply.package_name(version, target)
     run('dpkg-deb', '--root-owner-group', '-Zgzip', '-z1', '-b', tree, deb)
     shutil.rmtree(tree)
-    name = apply.deb_name(sums_for or version)
+    name = apply.package_name(sums_for or version, target)
     if sums:
         (stage / 'SHA256SUMS').write_text(f'{hashlib.sha256(deb.read_bytes()).hexdigest()}  {name}\n')
     if tamper:
@@ -168,6 +171,8 @@ def scenarios(original):
         ('a deb whose own version is not the tag', '99.0.0', dict(deb_version='99.0.1')),
         ('a version that is not newer than the installed one', '0.0.1', {}),
     )
+    if target == 'ubuntu-22.04':
+        refusals += (('a Noble package renamed to look like a Jammy package', '99.0.0', dict(other_target=True)),)
     for name, version, options in refusals:
         stage = make_release(version, source_deb=original, **options)
         staged_before = sorted(Path('/var/lib/uuway/update/new').glob('*'))

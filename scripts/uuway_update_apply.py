@@ -39,6 +39,7 @@ Release = collections.namedtuple('Release', 'version deb sha256')
 DEFAULT_TARGET = 'ubuntu'
 TARGETS = {
     'ubuntu': ('deb', 'amd64', 'uuway_{version}_amd64.deb'),
+    'ubuntu-22.04': ('deb', 'amd64', 'uuway_{version}_jammy_amd64.deb'),
     'debian-13': ('deb', 'amd64', 'uuway_{version}_trixie_amd64.deb'),
     'fedora': ('rpm', 'x86_64', 'uuway-{version}-1.fedora.x86_64.rpm'),
     'fedora-44': ('rpm', 'x86_64', 'uuway-{version}-1.fedora44.x86_64.rpm'),

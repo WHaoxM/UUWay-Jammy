@@ -2,7 +2,7 @@
 # Install a built uuway .deb into a throwaway, clean Ubuntu docker container and run
 # packaging/container-test.sh against it.
 #
-#   packaging/test-deb.sh [--target ubuntu-24.04|ubuntu-26.04] path/to/uuway_X_amd64.deb
+#   packaging/test-deb.sh [--target ubuntu-22.04|ubuntu-24.04|ubuntu-26.04] path/to/uuway_X_amd64.deb
 #                        [--keep] [--no-lint]
 set -Eeuo pipefail
 
@@ -23,6 +23,7 @@ done
 [[ -f "$deb" ]] || { printf 'usage: %s path/to/uuway.deb\n' "$0" >&2; exit 2; }
 command -v docker >/dev/null || { printf 'docker is required\n' >&2; exit 1; }
 case "$target" in
+    ubuntu-22.04) image=ubuntu:22.04 ;;
     ubuntu-24.04) image=ubuntu:24.04 ;;
     ubuntu-26.04) image=ubuntu:26.04 ;;
     *) printf 'unsupported Ubuntu target: %s\n' "$target" >&2; exit 2 ;;

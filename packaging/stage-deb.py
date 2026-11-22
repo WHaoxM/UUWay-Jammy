@@ -121,12 +121,12 @@ DAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 MONTHS = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
 
 
-def write_changelog(stage, version, epoch):
+def write_changelog(stage, version, epoch, suite='noble'):
     """A Debian changelog pointing at the release notes (the package is native to this repository)."""
     moment = time.gmtime(epoch)
     stamp = (f'{DAYS[moment.tm_wday]}, {moment.tm_mday:02d} {MONTHS[moment.tm_mon - 1]} {moment.tm_year} '
              f'{moment.tm_hour:02d}:{moment.tm_min:02d}:{moment.tm_sec:02d} +0000')
-    text = (f'uuway ({version}) noble; urgency=medium\n\n'
+    text = (f'uuway ({version}) {suite}; urgency=medium\n\n'
             f'  * UUWay {version}. Release notes: https://github.com/GaryOAO/UUWay/releases\n\n'
             f' -- GaryOAO <62834599+GaryOAO@users.noreply.github.com>  {stamp}\n')
     target = stage / 'usr/share/doc/uuway/changelog.gz'
@@ -136,11 +136,12 @@ def write_changelog(stage, version, epoch):
     os.utime(target, (epoch, epoch))
 
 
-def write_control(stage, version, depends):
+def write_control(stage, version, depends, target='ubuntu'):
     template = (ROOT / 'packaging/deb/control.in').read_text()
     size = sum(p.stat().st_size for p in stage.rglob('*') if p.is_file() and not p.is_symlink())
     extra = ''.join(', ' + item for item in depends) if depends else ''
     control = (template.replace('@VERSION@', version)
+               .replace('@TARGET@', target)
                .replace('@SIZE@', str((size + 1023) // 1024))
                .replace('@SHLIBS@', extra))
     debian = stage / 'DEBIAN'
@@ -164,6 +165,7 @@ def write_control(stage, version, depends):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--version', required=True, help='Debian version, e.g. 1.0.0')
+    parser.add_argument('--target', choices=('ubuntu-22.04', 'ubuntu-24.04', 'ubuntu-26.04'), default='ubuntu-24.04')
     parser.add_argument('--output-dir', type=Path, default=ROOT / 'build/deb')
     parser.add_argument('--epoch', type=int, default=None,
                         help='mtime for every packaged file (default: SOURCE_DATE_EPOCH or HEAD commit time)')
@@ -180,6 +182,10 @@ def main():
         if head.returncode != 0 or not head.stdout.strip().isdigit():
             raise SystemExit('Not a git checkout: pass --epoch or set SOURCE_DATE_EPOCH')
         epoch = int(head.stdout.strip())
+    jammy = args.target == 'ubuntu-22.04'
+    target = 'ubuntu-22.04' if jammy else 'ubuntu'
+    if jammy and (ROOT / 'build/compat/ubuntu26').exists():
+        raise SystemExit('A Jammy package cannot ship Linux code built for another Ubuntu release')
     entries = deb_manifest.files()
     check_sources(entries)
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -188,17 +194,18 @@ def main():
         stage.mkdir()
         copy_tree(entries, stage, epoch)
         (stage / 'usr/lib/uuway/package-info.json').write_text(json.dumps(dict(
-            version=args.version, target='ubuntu', format='deb', ota=True, wine='11.0'), indent=2) + '\n')
-        write_changelog(stage, args.version, epoch)
+            version=args.version, target=target, format='deb', ota=True, wine='11.0'), indent=2) + '\n')
+        write_changelog(stage, args.version, epoch, 'jammy' if jammy else 'noble')
         # FFmpeg is a generic runtime dependency. The package carries both
         # Ubuntu 24.04 and 26.04 AMD binaries and chooses the matching ABI at
         # runtime, so dpkg must not record one build's SONAME here.
-        depends = None if args.no_shlibs else shlibs_depends(stage, exclude_ffmpeg=True)
+        depends = None if args.no_shlibs else shlibs_depends(stage, exclude_ffmpeg=not jammy)
         if depends is None and not args.no_shlibs:
             print('warning: dpkg-shlibdeps unavailable; native library dependencies not computed',
                   file=sys.stderr)
-        write_control(stage, args.version, depends or [])
-        deb = args.output_dir / f'uuway_{args.version}_amd64.deb'
+        write_control(stage, args.version, depends or [], target)
+        suffix = '_jammy' if jammy else ''
+        deb = args.output_dir / f'uuway_{args.version}{suffix}_amd64.deb'
         subprocess.run(['dpkg-deb', '--root-owner-group', '-Zxz', '--build', str(stage), str(deb)],
                        check=True, capture_output=True)
     print(deb)

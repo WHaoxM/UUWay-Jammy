@@ -270,6 +270,8 @@ def check_environment(ctx):
             release[key] = value.strip('"')
     if (release.get('ID'), release.get('VERSION_ID')) in (('ubuntu', '24.04'), ('ubuntu', '26.04')):
         ok(release.get('PRETTY_NAME', 'Ubuntu'))
+    elif (release.get('ID'), release.get('VERSION_ID')) == ('ubuntu', '22.04'):
+        warn('Ubuntu 22.04 兼容目标：请使用 Jammy 专用安装包，GNOME 42 和 GPU 串流需要真机验证。')
     else:
         warn(f'当前系统：{release.get("PRETTY_NAME", "未知")}；跨发行版包仍需 GNOME Wayland 真机验证。')
     session = os.environ.get('XDG_SESSION_TYPE', '')

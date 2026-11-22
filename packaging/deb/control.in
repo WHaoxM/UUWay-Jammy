@@ -1,5 +1,5 @@
 Package: uuway
-X-UUWay-Target: ubuntu
+X-UUWay-Target: @TARGET@
 Version: @VERSION@
 Architecture: amd64
 Maintainer: GaryOAO <62834599+GaryOAO@users.noreply.github.com>

@@ -35,6 +35,13 @@ apt-get update -qq
 check "apt resolves every dependency from the Ubuntu archive" \
     apt-get install -y -qq --no-install-recommends "$deb"
 check "package is installed" dpkg -s uuway
+if [[ "${VERSION_ID:-}" == 22.04 ]]; then
+    check "Jammy package declares its platform and resolves FFmpeg 4.4" bash -c '
+        [ "$(dpkg-deb -f "$1" X-UUWay-Target)" = ubuntu-22.04 ] &&
+        dpkg-deb -f "$1" Depends | grep -q libavcodec58 &&
+        dpkg-query -W libavcodec58 libavutil56 libswscale5
+    ' _ "$deb"
+fi
 useradd -m tester
 
 section "Layout"

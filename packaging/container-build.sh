@@ -41,6 +41,7 @@ while (($#)); do
     esac
 done
 case "$target" in
+    ubuntu-22.04) ubuntu_version=22.04; codename=jammy ;;
     ubuntu-24.04) ubuntu_version=24.04; codename=noble ;;
     ubuntu-26.04) ubuntu_version=26.04; codename=resolute ;;
     *) ubuntu_version=""; codename="" ;;
@@ -66,7 +67,7 @@ apt-get install -y -qq --no-install-recommends "${packages[@]}"
 
 step "WineHQ stable $wine_version (winegcc and import libraries)"
 if ! dpkg-query -W -f='${Version}' winehq-stable 2>/dev/null | grep -qx "$wine_version"; then
-    if [[ "$target" == ubuntu-24.04 ]]; then
+    if [[ "$target" != ubuntu-26.04 ]]; then
         dpkg --add-architecture i386
     fi
     install -d -m 0755 /etc/apt/keyrings
@@ -77,7 +78,7 @@ if ! dpkg-query -W -f='${Version}' winehq-stable 2>/dev/null | grep -qx "$wine_v
         "/etc/apt/sources.list.d/winehq-${codename}.sources"
     apt-get update -qq
     wine_packages=("winehq-stable=$wine_version" "wine-stable=$wine_version")
-    if [[ "$target" == ubuntu-24.04 ]]; then
+    if [[ "$target" != ubuntu-26.04 ]]; then
         wine_packages+=("wine-stable-amd64=$wine_version" "wine-stable-i386:i386=$wine_version")
     fi
     apt-get install -y -qq --no-install-recommends "${wine_packages[@]}"
@@ -104,8 +105,12 @@ fi
 export PATH="/usr/local/bin:$PATH"
 gcc --version | head -1
 
-step "Pinned DXVK build tools (archive.ubuntu.com first, the configured mirror as fallback)"
-/usr/bin/python3 - "$repo_dir" <<'PY'
+if [[ "$target" == ubuntu-22.04 ]]; then
+    step "Use the matching verified Windows-only DXVK artifacts"
+    /usr/bin/python3 "$repo_dir/packaging/stage-jammy-dxvk.py"
+else
+    step "Pinned DXVK build tools (archive.ubuntu.com first, the configured mirror as fallback)"
+    /usr/bin/python3 - "$repo_dir" <<'PY'
 import hashlib, json, pathlib, subprocess, sys
 root = pathlib.Path(sys.argv[1])
 manifest = json.loads((root / 'config/dxvk-capture-dependencies.json').read_text())
@@ -128,13 +133,19 @@ for package in manifest['packages']:
     else:
         raise SystemExit('could not fetch ' + package['file'])
 PY
+fi
 
 step "Native runtime (same order as install.sh step 3)"
 cd "$repo_dir"
 export UURB_PIPEWIRE_HEADERS=/usr/include
 export LIBRARY_PATH=/usr/local/cuda/lib64/stubs
-export UURB_GLSLANG="$repo_dir/build/dxvk-capture/toolchain/usr/bin/glslangValidator"
-for script in build-dxvk-capture build-dxgi-capture-probe build-uu-native-bootstrap build-uu-native-input \
+if [[ "$target" == ubuntu-22.04 ]]; then
+    export UURB_GLSLANG="$(command -v glslangValidator)"
+else
+    export UURB_GLSLANG="$repo_dir/build/dxvk-capture/toolchain/usr/bin/glslangValidator"
+    bash "$repo_dir/scripts/build-dxvk-capture.sh"
+fi
+for script in build-dxgi-capture-probe build-uu-native-bootstrap build-uu-native-input \
               build-uu-native-display build-native-ime build-helpers build-pipewire-probe; do
     printf '\n── %s\n' "$script"
     bash "scripts/$script.sh"
@@ -152,4 +163,4 @@ cp -a build/backends/nvidia/dxvk-capture build/backends/nvidia/helpers build/bac
 
 step "Package"
 unset LIBRARY_PATH
-/usr/bin/python3 packaging/stage-deb.py --version "$version" --output-dir "$output_dir"
+/usr/bin/python3 packaging/stage-deb.py --target "$target" --version "$version" --output-dir "$output_dir"

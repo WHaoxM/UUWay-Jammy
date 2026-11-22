@@ -79,7 +79,7 @@ def winehq_source(release=None):
     release = os_release() if release is None else release
     distro = release.get('ID')
     codename = release.get('VERSION_CODENAME', '')
-    allowed = {'ubuntu': {'noble', 'resolute'}, 'debian': {'trixie'}}
+    allowed = {'ubuntu': {'jammy', 'noble', 'resolute'}, 'debian': {'trixie'}}
     if codename not in allowed.get(distro, set()):
         raise ValueError('当前系统没有自动安装 WineHQ 的适配，请安装配套的 uuway-wine11 包。')
     name = f'winehq-{codename}.sources'
@@ -98,5 +98,5 @@ def uninstall_command(release=None):
 def ota_supported(root=None):
     info = package_info(root)
     # Legacy Ubuntu packages have no metadata. New packages must opt in.
-    return (info.get('ota') is True and info.get('target') in ('ubuntu', 'debian-13', 'fedora', 'fedora-44', 'fedora-45', 'arch')
+    return (info.get('ota') is True and info.get('target') in ('ubuntu', 'ubuntu-22.04', 'debian-13', 'fedora', 'fedora-44', 'fedora-45', 'arch')
             if info else os_release().get('ID') == 'ubuntu')

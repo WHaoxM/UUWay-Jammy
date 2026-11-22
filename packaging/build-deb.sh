@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build the uuway .deb in a throwaway Ubuntu container.
 #
-#   packaging/build-deb.sh [--target ubuntu-24.04|ubuntu-26.04] [--version 1.0.0]
+#   packaging/build-deb.sh [--target ubuntu-22.04|ubuntu-24.04|ubuntu-26.04] [--version 1.0.0]
 #                          [--compat-package PATH] [--output-dir DIR] [--keep]
 #
 # The source is the git-tracked and untracked-but-not-ignored files of this checkout, so
@@ -28,10 +28,15 @@ while (($#)); do
 done
 command -v docker >/dev/null || { printf 'docker is required\n' >&2; exit 1; }
 case "$target" in
+    ubuntu-22.04) image=ubuntu:22.04 ;;
     ubuntu-24.04) image=ubuntu:24.04 ;;
     ubuntu-26.04) image=ubuntu:26.04 ;;
     *) printf 'unsupported Ubuntu target: %s\n' "$target" >&2; exit 2 ;;
 esac
+[[ "$target" != ubuntu-22.04 || -z "$compat_package" ]] || {
+    printf 'The Jammy package must not include other Ubuntu releases’ Linux binaries.\n' >&2
+    exit 2
+}
 if [[ -n "$compat_package" && ! -f "$compat_package" ]]; then
     printf 'compatibility package does not exist: %s\n' "$compat_package" >&2
     exit 2
@@ -70,4 +75,6 @@ docker exec -e "SOURCE_DATE_EPOCH=$(git -C "$repo_dir" log -1 --format=%ct)" -w 
     packaging/container-build.sh --target "$target" --version "$version" --output-dir /work/out
 mkdir -p "$output_dir"
 docker cp "$name:/work/out/." "$output_dir/"
-printf '\nBuilt: %s\n' "$output_dir/uuway_${version}_amd64.deb"
+suffix=''
+[[ "$target" != ubuntu-22.04 ]] || suffix=_jammy
+printf '\nBuilt: %s\n' "$output_dir/uuway_${version}${suffix}_amd64.deb"
