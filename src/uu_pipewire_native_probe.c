@@ -93,19 +93,26 @@ static void format_changed(void *opaque, uint32_t id, const struct spa_pod *form
     struct spa_video_info_raw video = {0};
     int parsed = spa_format_video_raw_parse(format, &video);
     const struct spa_pod_prop *modifier = spa_pod_find_prop(format, NULL, SPA_FORMAT_VIDEO_modifier);
-    fprintf(stderr, "Negotiated video: parse=%d flags=%u format=%u size=%ux%u modifier_type=%u\n",
-            parsed, video.flags, video.format, video.size.width, video.size.height,
+    /* PipeWire 0.3.48 has the modifier POD but not spa_video_info_raw.flags.
+     * Require a single resolved value on both old and new PipeWire. */
+    uint32_t modifier_count = 0, modifier_choice = SPA_CHOICE_None;
+    const struct spa_pod *modifier_value = modifier ?
+        spa_pod_get_values(&modifier->value, &modifier_count, &modifier_choice) : NULL;
+    int64_t modifier_number;
+    fprintf(stderr, "Negotiated video: parse=%d format=%u size=%ux%u modifier_type=%u\n",
+            parsed, video.format, video.size.width, video.size.height,
             modifier ? modifier->value.type : 0);
     if (modifier && spa_pod_is_choice(&modifier->value))
         fprintf(stderr, "Modifier choice type=%u values=%u\n",
                 SPA_POD_CHOICE_TYPE(&modifier->value), (unsigned)SPA_POD_CHOICE_N_VALUES(&modifier->value));
-    if (parsed < 0 ||
-        !(video.flags & SPA_VIDEO_FLAG_MODIFIER) ||
-        !modifier || !fourcc(video.format) ||
+    if (parsed < 0 || !modifier_value || modifier_count != 1 ||
+        modifier_choice != SPA_CHOICE_None || spa_pod_get_long(modifier_value, &modifier_number) < 0 ||
+        !fourcc(video.format) ||
         !video.size.width || !video.size.height || video.size.width > 8192 || video.size.height > 8192) {
         fail(p, "No fixed explicit DMA-BUF video format; refusing fallback");
         return;
     }
+    video.modifier = (uint64_t)modifier_number;
     p->video = video;
     if (p->publisher) {
         p->publisher->rate_num = video.framerate.num;

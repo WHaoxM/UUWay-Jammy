@@ -48,10 +48,13 @@ Jammy 包和原来的 `uuway_*_amd64.deb` 不是同一个更新目标。同版�
 ```bash
 echo "$XDG_SESSION_TYPE"
 gnome-shell --version
+uname -r
 nvidia-smi
 ```
 
 首轮用现有桌面和驱动，不启用自动登录，不切换显卡驱动。看见 `wayland` 并且 RTX 3090 驱动正常后，用 Jammy 专用包进行试装。向导可能询问是否添加 Jammy 的 WineHQ 源并安装 Wine 11.0；如果机器上有其他依赖系统 Wine 的应用，先核对再批准这一步。
+
+零拷贝捕获要求运行中的内核和显卡支持 DMA-BUF 同步栅栏导出。Jammy 的旧编译头文件不再阻止构建，但如果实机诊断提示不支持此内核功能，不跳过同步，也不自动切换内核。
 
 ```bash
 sudo apt install ./uuway_1.5.7+jammy.1_jammy_amd64.deb

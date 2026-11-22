@@ -25,6 +25,14 @@
 #include <unistd.h>
 #include <time.h>
 
+/* Jammy's linux-libc-dev does not declare the newer DMA-BUF export command.
+ * Keep using the Linux UAPI and let the running kernel report availability.
+ * Ref: Linux include/uapi/linux/dma-buf.h, DMA_BUF_IOCTL_EXPORT_SYNC_FILE. */
+#ifndef DMA_BUF_IOCTL_EXPORT_SYNC_FILE
+struct dma_buf_export_sync_file { __u32 flags; __s32 fd; };
+#define DMA_BUF_IOCTL_EXPORT_SYNC_FILE _IOWR(DMA_BUF_BASE, 2, struct dma_buf_export_sync_file)
+#endif
+
 struct input_cache {
     const void *key;
     struct uurb_vk_image image;
@@ -272,7 +280,13 @@ static int capture_frame(struct uurb_capture_encoder *s, const void *buffer_key,
         struct dma_buf_export_sync_file sync = {.flags = DMA_BUF_SYNC_READ, .fd = -1};
         int sync_status;
         do { sync_status = ioctl(fd, DMA_BUF_IOCTL_EXPORT_SYNC_FILE, &sync); } while (sync_status < 0 && errno == EINTR);
-        if (sync_status < 0) { perror("DMA-BUF acquire fence export"); goto fail; }
+        if (sync_status < 0) {
+            if (errno == ENOTTY)
+                fprintf(stderr, "The running kernel does not support DMA-BUF sync-file export\n");
+            else
+                perror("DMA-BUF acquire fence export");
+            goto fail;
+        }
         sync_fd = sync.fd;
         VkSemaphoreCreateInfo semaphore = {.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
         GPU(vkCreateSemaphore(s->device, &semaphore, NULL, &ready));
