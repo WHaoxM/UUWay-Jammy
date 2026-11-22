@@ -40,8 +40,9 @@ The following common UU features are adapted for Linux. See [supported scope](#s
 
 ## Install
 
-**Ubuntu 22.04 (downstream compatibility build):** use the dedicated
-`_jammy_amd64.deb`, not the upstream Ubuntu 24.04/26.04 package. See the
+**Ubuntu 22.04 (downstream preview):** get the dedicated `_jammy_amd64.deb`
+from the [Jammy preview release](https://github.com/WHaoxM/UUWay-Jammy/releases/tag/v1.5.7-jammy.1),
+not the upstream Ubuntu 24.04/26.04 package. See the
 [Jammy build and desktop acceptance notes](docs/ubuntu-22.04.md).
 
 Mainline targets **GNOME Wayland**, with an NVIDIA GPU supporting NVENC or an AMD GPU supporting H.264/HEVC VA-API. Ubuntu 24.04 / GNOME 46 is the reference environment; Ubuntu 26.04 also has compatibility fixes and hardware validation. Keep the desktop logged in. A machine without a monitor still needs a desktop output, such as a display dummy plug.

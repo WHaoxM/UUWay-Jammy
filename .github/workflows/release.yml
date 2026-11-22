@@ -2,7 +2,8 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
+    # Jammy previews publish their verified, separately built .deb manually.
+    tags: ['v*', '!v*-jammy.*']
   workflow_dispatch:
     inputs:
       version:

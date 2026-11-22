@@ -40,7 +40,7 @@ UUWay 让官方 Windows 版 UU 远程被控端在 Linux 上运行，用手机或
 
 ## 安装
 
-**Ubuntu 22.04（本分支兼容构建）**：使用专用的 `_jammy_amd64.deb`，不要使用上游 Ubuntu 24.04/26.04 的通用包。见 [Jammy 构建、安装与真机验收](docs/ubuntu-22.04.md)。
+**Ubuntu 22.04（本分支预览版）**：从 [Jammy 预览发布页](https://github.com/WHaoxM/UUWay-Jammy/releases/tag/v1.5.7-jammy.1) 下载专用的 `_jammy_amd64.deb`，不要使用上游 Ubuntu 24.04/26.04 的通用包。见 [Jammy 构建、安装与真机验收](docs/ubuntu-22.04.md)。
 
 主线使用 **GNOME Wayland** 桌面，搭配支持 NVENC 的 NVIDIA 显卡或支持 H.264/HEVC VA-API 的 AMD 显卡。Ubuntu 24.04 / GNOME 46 是参考环境，Ubuntu 26.04 也已有适配和实测。桌面须保持登录；无显示器时需有可用的桌面输出，例如显示器诱骗器。
 

@@ -39,7 +39,7 @@ packaging/test-deb.sh --target ubuntu-22.04 build/deb/uuway_1.5.7+jammy.1_jammy_
 
 Jammy 自带 FFmpeg 4.4；原生 ELF 组件在 Jammy 构建，并由 Debian 工具写入实际的编解码库依赖。两个 DXVK Windows PE DLL 和许可证来自固定哈希的上游 v1.5.7 .deb，只重用这三个文件，不使用上游包内的 Linux 二进制。Jammy 系统不运行上游 24.04 的编译器；若 DXVK 源或补丁改变，先用上游 24.04 工具链重新构建并重新固定对应 PE 资产。
 
-Jammy 包和原来的 `uuway_*_amd64.deb` 不是同一个更新目标。同版本上游 Release 没有 Jammy 包，不能通过上游更新器替换成本分支的构建；本地兼容版先手动安装。此分支不改 GitHub Release 或发布配置。
+Jammy 包和原来的 `uuway_*_amd64.deb` 不是同一个更新目标。请从 [本仓库的 Jammy 预览发布页](https://github.com/WHaoxM/UUWay-Jammy/releases/tag/v1.5.7-jammy.1) 下载并手动安装。现有内置更新器仍查询上游，不会自动下载本仓库的资产；本次不改动上游仓库或上游 Release。
 
 ### 当前验收结果
 
