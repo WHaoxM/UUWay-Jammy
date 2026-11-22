@@ -2,6 +2,8 @@
  * and Windows NVENC, not installed into official UU. No raw pixel readback. */
 #define COBJMACROS
 #include "uu_dxgi_duplication.h"
+/* Define the DXGI 1.5 IIDs from the headers; older MinGW's dxguid lacks them. */
+#include <initguid.h>
 #include <dxgi1_5.h>
 #include "native_nvenc_reference_config.h"
 #include <limits.h>
