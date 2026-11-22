@@ -56,6 +56,8 @@ nvidia-smi
 
 零拷贝捕获要求运行中的内核和显卡支持 DMA-BUF 同步栅栏导出。Jammy 的旧编译头文件不再阻止构建，但如果实机诊断提示不支持此内核功能，不跳过同步，也不自动切换内核。
 
+安装向导用 Jammy 自带的 GStreamer 1.20 检查授权后是否收到画面；实际 DMA-BUF 诊断直接使用 PipeWire，不把普通画面探测当作 GPU 串流成功。
+
 ```bash
 sudo apt install ./uuway_1.5.7+jammy.1_jammy_amd64.deb
 uuway setup

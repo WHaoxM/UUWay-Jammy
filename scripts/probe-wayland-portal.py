@@ -13,6 +13,7 @@ import sys
 import stat
 import tempfile
 import time
+from uuway_platform import os_release
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVICE = 'org.freedesktop.portal.Desktop'
@@ -223,6 +224,12 @@ def main():
     parser.add_argument('--check-color-fixture', action='store_true',
                         help='Require the separately displayed RGB motion target in the decoded sample')
     args = parser.parse_args()
+    release = os_release()
+    # Jammy has GStreamer 1.20: the authorization-only check still uses it,
+    # while the regular DMA-BUF probe must use native PipeWire negotiation.
+    if ((release.get('ID'), release.get('VERSION_ID')) == ('ubuntu', '22.04') and
+            not (args.capture_check or args.vulkan_import or args.encode or args.gpu_relay_fd is not None)):
+        args.native_dmabuf = True
     if args.capture_status_fd is not None:
         import socket
         if (args.gpu_relay_fd is None or args.capture_status_fd < 3 or

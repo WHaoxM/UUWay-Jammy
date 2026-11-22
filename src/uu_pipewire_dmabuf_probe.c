@@ -4,7 +4,9 @@
 #include <gst/app/gstappsink.h>
 #include <gst/allocators/gstdmabuf.h>
 #include <gst/video/video.h>
+#if GST_CHECK_VERSION(1, 24, 0)
 #include <gst/video/video-info-dma.h>
+#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -29,6 +31,12 @@ int main(int argc, char **argv)
         fd < 3 || !node || fcntl((int)fd, F_GETFD) == -1) {
         fprintf(stderr, "usage: uu-pipewire-dmabuf-probe PORTAL_FD NODE_ID\n"); return 2;
     }
+#if !GST_CHECK_VERSION(1, 24, 0)
+    if (!capture_check) {
+        fprintf(stderr, "This GStreamer lacks explicit DRM caps; use the native PipeWire DMA-BUF probe\n");
+        return 2;
+    }
+#endif
     gst_init(NULL, NULL);
     int result = 1;
     GstElement *pipeline = gst_pipeline_new(NULL);
@@ -57,9 +65,12 @@ int main(int argc, char **argv)
         fprintf(stderr, "PipeWire pipeline failed to enter PLAYING\n");
         goto done;
     }
-    unsigned frames = 0, width = 0, height = 0, memories = 0;
+    unsigned frames = 0, width = 0, height = 0;
+#if GST_CHECK_VERSION(1, 24, 0)
+    unsigned memories = 0;
     guint32 fourcc = 0;
     guint64 modifier = 0;
+#endif
     gint64 start = g_get_monotonic_time();
     while (g_get_monotonic_time() - start < 8000000) {
         GstMessage *message = gst_bus_pop_filtered(bus, GST_MESSAGE_ERROR | GST_MESSAGE_EOS);
@@ -90,6 +101,7 @@ int main(int argc, char **argv)
             gst_sample_unref(sample);
             continue;
         }
+#if GST_CHECK_VERSION(1, 24, 0)
         GstVideoInfoDmaDrm info;
         gst_video_info_dma_drm_init(&info);
         gboolean valid = buffer && negotiated &&
@@ -114,6 +126,7 @@ int main(int argc, char **argv)
         fourcc = info.drm_fourcc; modifier = info.drm_modifier; memories = n;
         frames++;
         gst_sample_unref(sample); /* release immediately; never hold portal buffers across frames */
+#endif
     }
     if (!frames) { fprintf(stderr, "No capture frames within 8 seconds\n"); goto done; }
     if (capture_check) {
@@ -122,11 +135,13 @@ int main(int argc, char **argv)
         result = 0;
         goto done;
     }
+#if GST_CHECK_VERSION(1, 24, 0)
     printf("{\"frames\":%u,\"width\":%u,\"height\":%u,\"memory_planes\":%u,"
            "\"drm_fourcc\":%u,\"drm_modifier\":\"0x%016" G_GINT64_MODIFIER "x\","
            "\"dmabuf_only\":true,\"pixels_mapped\":false,\"encoded\":false}\n",
            frames, width, height, memories, fourcc, modifier);
     result = 0;
+#endif
 done:
     gst_element_set_state(pipeline, GST_STATE_NULL);
     gst_object_unref(bus);

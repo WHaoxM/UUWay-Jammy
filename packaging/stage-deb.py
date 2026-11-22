@@ -203,7 +203,10 @@ def main():
         if depends is None and not args.no_shlibs:
             print('warning: dpkg-shlibdeps unavailable; native library dependencies not computed',
                   file=sys.stderr)
-        write_control(stage, args.version, depends or [], target)
+        dependencies = depends or []
+        if jammy:
+            dependencies = ['gstreamer1.0-pipewire', *dependencies]
+        write_control(stage, args.version, dependencies, target)
         suffix = '_jammy' if jammy else ''
         deb = args.output_dir / f'uuway_{args.version}{suffix}_amd64.deb'
         subprocess.run(['dpkg-deb', '--root-owner-group', '-Zxz', '--build', str(stage), str(deb)],

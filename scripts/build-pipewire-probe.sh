@@ -4,7 +4,10 @@ set -Eeuo pipefail
 repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 stage="$repo_dir/build/native-presenter"
 mkdir -p "$stage"
-pkg-config --atleast-version=1.24 gstreamer-video-1.0
+pkg-config --atleast-version=1.20 gstreamer-video-1.0 || {
+    printf 'The capture diagnostic needs GStreamer video 1.20 or newer.\n' >&2
+    exit 1
+}
 read -r -a capture_flags <<<"$(pkg-config --cflags --libs gstreamer-app-1.0 gstreamer-allocators-1.0 gstreamer-video-1.0)"
 gcc -std=c11 -O2 -Wall -Wextra -Werror "$repo_dir/src/uu_pipewire_dmabuf_probe.c" \
     -o "$stage/uu-pipewire-dmabuf-probe" "${capture_flags[@]}"
