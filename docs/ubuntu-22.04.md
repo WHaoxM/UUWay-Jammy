@@ -5,7 +5,7 @@
 ## 阶段与验收
 
 1. **能安装**：在干净的 Jammy 容器构建单独的 `_jammy_amd64.deb`；在第二个干净容器安装并运行 CLI、控制台、用户运行时打包与服务配置、安装向导演练和卸载。确认原生库解析正确，更新器不把上游普通 Ubuntu 包当成 Jammy 包。
-2. **能远程控制**：在目标 OS 原生的 GNOME Wayland 会话中确认驱动、Vulkan、PipeWire 和屏幕共享；用 UU 远程客户端连接可见桌面并验证画面和键鼠。退出会话后再次检查可用性和服务状态。容器通过不等于此项通过。
+2. **能远程控制**：在目标 OS 原生的 GNOME Wayland 会话中确认驱动、Vulkan、PipeWire 和屏幕共享；用 UU 远程客户端连接可见桌面并验证画面和键鼠；断开远程连接后再连一次。保持本地桌面登录，容器通过不等于此项通过。
 
 构建和打包入口保留在 `packaging/`；`config/jammy-dxvk-bootstrap.json` 固定了参考资产和构建输入；`scripts/uuway_platform.py` 与 `scripts/uuway_update_apply.py` 负责 Jammy WineHQ 源和更新目标识别。
 
@@ -51,7 +51,7 @@ gnome-shell --version
 nvidia-smi
 ```
 
-首轮用现有桌面和驱动，不启用自动登录，不切换显卡驱动。看见 `wayland` 并且 RTX 3090 驱动正常后，用 Jammy 专用包进行试装：
+首轮用现有桌面和驱动，不启用自动登录，不切换显卡驱动。看见 `wayland` 并且 RTX 3090 驱动正常后，用 Jammy 专用包进行试装。向导可能询问是否添加 Jammy 的 WineHQ 源并安装 Wine 11.0；如果机器上有其他依赖系统 Wine 的应用，先核对再批准这一步。
 
 ```bash
 sudo apt install ./uuway_1.5.7+jammy.1_jammy_amd64.deb

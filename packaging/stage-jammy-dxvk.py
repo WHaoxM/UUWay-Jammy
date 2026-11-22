@@ -21,11 +21,18 @@ def main():
     for source, expected in spec['inputs'].items():
         if digest(ROOT / source) != expected.lower():
             raise SystemExit(f'DXVK build input changed: {source}; rebuild the PE DLLs on Ubuntu 24.04')
-    with tempfile.TemporaryDirectory(prefix='dxvk-jammy-') as temporary:
+    cache = ROOT / 'build/dxvk-capture/downloads'
+    cache.mkdir(parents=True, exist_ok=True)
+    archive = cache / (spec['sha256'] + '.deb')
+    with tempfile.TemporaryDirectory(prefix='dxvk-jammy-', dir=cache) as temporary:
         work = Path(temporary)
-        archive = work / 'reference.deb'
-        subprocess.run(['curl', '--fail', '--location', '--proto', '=https', '--retry', '3',
-                        '--max-time', '180', '-o', str(archive), spec['url']], check=True)
+        if not archive.is_file():
+            downloaded = work / 'reference.deb'
+            subprocess.run(['curl', '--fail', '--location', '--proto', '=https', '--retry', '3',
+                            '--max-time', '600', '-o', str(downloaded), spec['url']], check=True)
+            if digest(downloaded) != spec['sha256']:
+                raise SystemExit('Upstream DXVK reference package checksum mismatch')
+            downloaded.replace(archive)
         if digest(archive) != spec['sha256']:
             raise SystemExit('Upstream DXVK reference package checksum mismatch')
         tree = work / 'extracted'
