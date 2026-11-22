@@ -101,6 +101,13 @@ step "Toolchain"
 if [[ "$target" == ubuntu-24.04 ]]; then
     for tool in gcc cc; do ln -sf /usr/bin/gcc-11 "/usr/local/bin/$tool"; done
     for tool in g++ c++; do ln -sf /usr/bin/g++-11 "/usr/local/bin/$tool"; done
+elif [[ "$target" == ubuntu-22.04 ]]; then
+    # Jammy's MinGW headers default to an older Windows API level. UUWay's
+    # Windows helpers run under Wine 11 and already use Windows 10 APIs.
+    x86_64-w64-mingw32-gcc() {
+        command x86_64-w64-mingw32-gcc -D_WIN32_WINNT=0x0A00 -DWINVER=0x0A00 "$@"
+    }
+    export -f x86_64-w64-mingw32-gcc
 fi
 export PATH="/usr/local/bin:$PATH"
 gcc --version | head -1
