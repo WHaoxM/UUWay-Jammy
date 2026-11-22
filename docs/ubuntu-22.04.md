@@ -41,6 +41,12 @@ Jammy 自带 FFmpeg 4.4；原生 ELF 组件在 Jammy 构建，并由 Debian 工�
 
 Jammy 包和原来的 `uuway_*_amd64.deb` 不是同一个更新目标。同版本上游 Release 没有 Jammy 包，不能通过上游更新器替换成本分支的构建；本地兼容版先手动安装。此分支不改 GitHub Release 或发布配置。
 
+### 当前验收结果
+
+`1.5.7+jammy.1` 从代码提交 `b94f97c` 构建，产物为 `build/deb/uuway_1.5.7+jammy.1_jammy_amd64.deb`。已在单独的 Ubuntu 22.04.5 amd64 容器通过安装、FFmpeg 4.4 依赖解析、GTK 控制台渲染、普通用户运行时与服务配置、安装向导演练、同目标更新与失败回滚、拒绝不匹配的 Ubuntu 包、卸载。测试没有运行 lintian；更新验收使用真实 dpkg/apt，桌面和远程服务健康状态由演练模拟。
+
+GNOME 42 Wayland 下的屏幕授权、RTX 3090 编码和手机端键鼠还没有在目标机器上验收。
+
 ## 实机试装前
 
 在本机已经登录的 GNOME 桌面终端执行：
